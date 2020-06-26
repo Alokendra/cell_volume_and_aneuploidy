@@ -2,20 +2,19 @@
 
 # This script creates the plots from the osmotic pressure data
 
-import os
+import os, pickle
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde, t, sem
 
 Textlabel = lambda strng : strng.replace("_", " ").capitalize()
-Plotdir = "figures"
 
 def Saveorshow(plt, Figfilename):
     """
     Save or show figure
     """
     if Figfilename:
-        plt.savefig(os.path.join(Plotdir, Figfilename))
+        plt.savefig(Figfilename)
         plt.close()
     else:
         plt.show()
@@ -35,7 +34,7 @@ def smooth_histogram(Cluster_Raw, Figfilename = ""):
 
     plt.legend(map(Textlabel, Labels))
 
-    Saveorshow(plt, Figfilename)
+    Saveorshow(plt, os.path.join(Plotdir, Figfilename))
 
 
 
@@ -54,7 +53,7 @@ def plot_ploidy_means(Cluster_Data, Figfilename = ""):
 
     plt.legend()
 
-    Saveorshow(plt, Figfilename)
+    Saveorshow(plt, os.path.join(Plotdir, Figfilename))
 
 
 def boxplots(Cluster_Mean_Data, Figfilename = ""):
@@ -70,4 +69,20 @@ def boxplots(Cluster_Mean_Data, Figfilename = ""):
     plt.legend(map(Textlabel, Labels))
     plt.boxplot([Cluster_Mean_Data["euploid_means"], Cluster_Mean_Data["aneuploid_means"]])
 
-    Saveorshow(plt, Figfilename)
+    Saveorshow(plt, os.path.join(Plotdir, Figfilename))
+
+if __name__ == '__main__':
+
+    Dumpfile = "osmotic_pressure_all.dmp"
+    Plotdir = "figures"
+
+    with open(Dumpfile) as fp: Ploidy_Data = pickle.load(fp)
+    
+    Cluster_Data = {"euploid_cleared_clusters" : Ploidy_Data["Euploids"]["cleared_clusters"], "aneuploid_cleared_clusters" : Ploidy_Data["Aneuploids"]["cleared_clusters"]}
+    Cluster_Mean_Data = { "euploid_means" : Ploidy_Data["Euploids"]["cluster_means"], "aneuploid_means" : Ploidy_Data["Aneuploids"]["cluster_means"]}
+    Cluster_Raw_Data = { "euploid_raw" : Ploidy_Data["Euploids"]["raw"], "aneuploid_raw" : Ploidy_Data["Aneuploids"]["raw"]}
+
+
+    smooth_histogram(Cluster_Raw_Data, Figfilename = "Osmotic_Pressure_Histogam.png")
+    plot_ploidy_means(Cluster_Data, Figfilename = "Osmotic_Pressure_Mean.png")
+    boxplots(Cluster_Mean_Data, Figfilename = "Osmotic_Pressure_Box_Plots")

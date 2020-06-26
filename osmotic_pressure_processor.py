@@ -5,11 +5,6 @@ from csv import reader as csv_reader
 import numpy as np
 from pickle import dump
 
-type_index = []
-master_table = []
-Datadir = "data"
-datafile = os.path.join(Datadir, "20171107_yeast.csv")
-
 
 def clear_outlier(quadruplet, FDR=0.05, no_clear=True):
 
@@ -40,65 +35,58 @@ def clear_outlier(quadruplet, FDR=0.05, no_clear=True):
     raise Exception('something went wrong with outlier calculation for the set %s; %s' %
                     (quadruplet, potential_outliers))
 
+def Build_Table(datafile):
+    """
+    Build master table
+    """
+    type_index = []
+    master_table = []
+    with open(datafile, 'rb') as source_file:
+        reader = csv_reader(source_file)
+        header = reader.next()
+        for line in reader:
+            strain_type = line[1][:1]
+            strain_index = line[1][1:]
+            type_index.append(strain_type)
+            master_table.append((float(strain_index), float(line[2])))
+    type_index = np.array(type_index)
+    master_table = np.array(master_table)
 
-with open(datafile, 'rb') as source_file:
-    reader = csv_reader(source_file)
-    header = reader.next()
-    for line in reader:
-        strain_type = line[1][:1]
-        strain_index = line[1][1:]
-        type_index.append(strain_type)
-        master_table.append((float(strain_index), float(line[2])))
+    return type_index, master_table
 
-type_index = np.array(type_index)
-master_table = np.array(master_table)
 
-aneuploid_selector = type_index == 'a'
-euploid_selector = type_index == 'e'
+def Collect_Data(type_index, master_table):
+    """
+    Collects the data for euploids and aneuploids
+    """
+    Ploidy_Data = {"Euploids" : {}, "Aneuploids" : {}}
+    Selector = {"Euploids" : "a", "Aneuploids" : "e"}
 
-euploid_raw = master_table[euploid_selector][:, 1]
-aneuploid_raw = master_table[aneuploid_selector][:, 1]
+    for key in Ploidy_Data:
+        Ploidy_Data[key]["selector"] = type_index == Selector[key]
+        Ploidy_Data[key]["raw"] = master_table[Ploidy_Data[key]["selector"]][:, 1]
+        Ploidy_Data[key]["clusters"] = np.unique(master_table[Ploidy_Data[key]["selector"], 0])
+        Cleared_Clusters = []
+        for cluster in Ploidy_Data[key]["clusters"]:
+            Cleared_Clusters.append(clear_outlier(master_table[np.logical_and(master_table[:, 0] == cluster, Ploidy_Data[key]["selector"]), 1]))
+        Ploidy_Data[key]["cleared_clusters"] = Cleared_Clusters
+        Ploidy_Data[key]["cluster_means"] = np.mean(Cleared_Clusters, axis = 1).tolist()
 
-aneuploid_clusters = np.unique(master_table[aneuploid_selector, 0])
-euploid_clusters = np.unique(master_table[euploid_selector, 0])
+    return Ploidy_Data
 
-aneuploid_cleared_clusters = []
-euploid_cleared_clusters = []
+if __name__ == '__main__':
 
-for cluster in aneuploid_clusters:
-    aneuploid_cleared_clusters.append(clear_outlier(master_table[np.logical_and(master_table[:,
-                                                                         0] == cluster,
-                                               aneuploid_selector), 1]))
+    Datadir = "data"
+    datafile = os.path.join(Datadir, "20171107_yeast.csv")
 
-for cluster in euploid_clusters:
-    euploid_cleared_clusters.append(clear_outlier(master_table[np.logical_and(master_table[:,
-                                                                        0] == cluster,
-                                             euploid_selector), 1]))
+    type_index, master_table = Build_Table(datafile)
+    Ploidy_Data = Collect_Data(type_index, master_table)
 
-euploid_means = np.mean(euploid_cleared_clusters, axis = 1).tolist()
-aneuploid_means = np.mean(aneuploid_cleared_clusters, axis = 1).tolist()
+    print "means ratio: 1:%f" % (np.mean(Ploidy_Data["Euploids"]["cluster_means"])/np.mean(Ploidy_Data["Aneuploids"]["cluster_means"]))
 
-print "means ratio: 1:%f" % (np.mean(aneuploid_means)/np.mean(euploid_means))
 
-Cluster_Data = {"euploid_cleared_clusters" : euploid_cleared_clusters, "aneuploid_cleared_clusters" : aneuploid_cleared_clusters}
-Cluster_Mean_Data = { "euploid_means" : euploid_means, "aneuploid_means" : aneuploid_means }
-Cluster_Raw_Data = { "euploid_raw" : euploid_raw, "aneuploid_raw" : aneuploid_raw }
-
-with open('osmotic_pressure.dmp', 'w') as fp:
-    dump((euploid_means, aneuploid_means), fp)
-with open('osmotic_pressure_all.dmp', 'w') as fp:
-    dump(Cluster_Data, fp)
-
-from osmotic_pressure_plots import smooth_histogram, plot_ploidy_means, boxplots
-
-smooth_histogram(Cluster_Raw_Data, Figfilename = "Osmotic_Pressure_Histogam.png")
-plot_ploidy_means(Cluster_Data, Figfilename = "Osmotic_Pressure_Mean.png")
-boxplots(Cluster_Mean_Data, Figfilename = "Osmotic_Pressure_Box_Plots")
-# print euploids_raw
-
-# smooth_histogram(euploids_raw)
-# smooth_histogram(aneuploids_raw, 'r')
-#
-# plt.show()
-
+    with open('osmotic_pressure.dmp', 'w') as fp:
+        dump((Ploidy_Data["Euploids"]["cluster_means"], Ploidy_Data["Aneuploids"]["cluster_means"]), fp)
+    with open('osmotic_pressure_all.dmp', 'w') as fp:
+        dump(Ploidy_Data, fp)
 
