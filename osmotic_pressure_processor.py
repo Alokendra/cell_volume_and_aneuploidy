@@ -3,20 +3,12 @@
 import os
 from csv import reader as csv_reader
 import numpy as np
-from matplotlib import pyplot as plt
-from scipy.stats import gaussian_kde, t, sem
 from pickle import dump
 
 type_index = []
 master_table = []
 Datadir = "data"
 datafile = os.path.join(Datadir, "20171107_yeast.csv")
-
-def smooth_histogram(data, color='k'):
-    fltr = np.logical_not(np.isnan(data))
-    density = gaussian_kde(data[fltr].flatten())
-    xs = np.linspace(data[fltr].min(), data[fltr].max(), 200)
-    plt.plot(xs, density(xs), color)
 
 
 def clear_outlier(quadruplet, FDR=0.05, no_clear=True):
@@ -64,8 +56,8 @@ master_table = np.array(master_table)
 aneuploid_selector = type_index == 'a'
 euploid_selector = type_index == 'e'
 
-euploids_raw = master_table[euploid_selector][:, 1]
-aneuploids_raw = master_table[aneuploid_selector][:, 1]
+euploid_raw = master_table[euploid_selector][:, 1]
+aneuploid_raw = master_table[aneuploid_selector][:, 1]
 
 aneuploid_clusters = np.unique(master_table[aneuploid_selector, 0])
 euploid_clusters = np.unique(master_table[euploid_selector, 0])
@@ -83,32 +75,25 @@ for cluster in euploid_clusters:
                                                                         0] == cluster,
                                              euploid_selector), 1]))
 
-aneuploid_means = []
-euploid_means = []
-
-for i, cluster in enumerate(aneuploid_cleared_clusters):
-    aneuploid_means.append(np.mean(cluster))
-    plt.errorbar(i, np.mean(cluster), yerr=sem(cluster), fmt='rs--')
-
-for i, cluster in enumerate(euploid_cleared_clusters):
-    euploid_means.append(np.mean(cluster))
-    plt.errorbar(i, np.mean(cluster), yerr=sem(cluster), fmt='ks--')
-
-plt.show()
+euploid_means = np.mean(euploid_cleared_clusters, axis = 1).tolist()
+aneuploid_means = np.mean(aneuploid_cleared_clusters, axis = 1).tolist()
 
 print "means ratio: 1:%f" % (np.mean(aneuploid_means)/np.mean(euploid_means))
 
-vibration = 0.05*(2*np.random.rand(len(euploid_means))-1)
-plt.plot(1+vibration, euploid_means, 'ko')
-vibration = 0.05*(2*np.random.rand(len(aneuploid_means))-1)
-plt.plot(2+vibration, aneuploid_means, 'ko')
-plt.boxplot([euploid_means, aneuploid_means])
-
-plt.show()
+Cluster_Data = {"euploid_cleared_clusters" : euploid_cleared_clusters, "aneuploid_cleared_clusters" : aneuploid_cleared_clusters}
+Cluster_Mean_Data = { "euploid_means" : euploid_means, "aneuploid_means" : aneuploid_means }
+Cluster_Raw_Data = { "euploid_raw" : euploid_raw, "aneuploid_raw" : aneuploid_raw }
 
 with open('osmotic_pressure.dmp', 'w') as fp:
     dump((euploid_means, aneuploid_means), fp)
+with open('osmotic_pressure_all.dmp', 'w') as fp:
+    dump(Cluster_Data, fp)
 
+from osmotic_pressure_plots import smooth_histogram, plot_ploidy_means, boxplots
+
+smooth_histogram(Cluster_Raw_Data, Figfilename = "Osmotic_Pressure_Histogam.png")
+plot_ploidy_means(Cluster_Data, Figfilename = "Osmotic_Pressure_Mean.png")
+boxplots(Cluster_Mean_Data, Figfilename = "Osmotic_Pressure_Box_Plots")
 # print euploids_raw
 
 # smooth_histogram(euploids_raw)
