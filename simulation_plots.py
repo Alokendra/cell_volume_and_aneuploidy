@@ -19,124 +19,24 @@ large_complex_correlation = 0.85
 
 Suptitle1 = "large complex boost: x%.2f; large complex corr: %.2f, overall corr: %.2f\n" % (large_complex_boost, large_complex_correlation, abundance_correlation)
 
+Base_Labels = { "complex size" : 1,
+                "abundance correlation" : 0,
+                "water abundance" : "base",
+                "ideality correction" : "base" }
 
-def diameter_plot_array(defautlt_params, base_array,
-                        names_array=None, base_val=None, base_name=None,
-                        array_vals_name='', y_min=8, y_max=15, yticks=8):
-    """
-    Generates a plot of states based on a variation of a single parameter.
+Label_Factor = { "complex size" : 1,
+                 "abundance correlation" : 100,
+                 "water abundance" : 100,
+                 "ideality correction" : 100 }
 
-    :param base_array: 1D numpy array
-    :param names_array: 1D numpy string arrays
-
-    :return:
-    """
-    plt.title('Cell diameter vs ploidy vs %s' % array_vals_name)
-
-    base = np.linspace(0.0, 1.0, 20).tolist()
-    arr_base = np.array(base)
-    arr_base += 1
-
-    ax = plt.gca()
-    ax.set_axisbelow(True)
-    ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
-    ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
-
-    plt.xlabel("Ploidy")
-    plt.ylabel("Equivalent Diameter")
-
-    cmap = get_cmap('brg')
-
-    if names_array is None:
-        names_array = base_array
-
-    if base_val is not None and base_name is None:
-        base_name = base_val
-
-    # base array is assumed to be a 1D numpy array
-
-    color_remap = np.linspace(0.5, 0.9, len(base_array))[np.argsort(base_array)[np.argsort(base_array)]]
-
-    defautlt_params['base'] = base
-    defautlt_params['total_partners'] = total_partners
-
-    # for key, value in defautlt_params.iteritems():
-    #     print key, value
-
-    running_partial = core_sim_loop
-
-    free_kwarg = ''
-    for key, value in defautlt_params.iteritems():
-        if value is not None:
-            running_partial = partial(running_partial, **{key: value})
-        else:
-            free_kwarg = key
-
-    # partial_function = partial(core_sim_loop, **defautlt_params)
-    partial_function = running_partial
-
-    # todo: form a partial function
-    # => kwargs
-
-    # reference plot
-    if base_val is not None:
-
-        means, stds, pre_buckets = partial_function(**{free_kwarg: base_val})
-
-        plt.plot(arr_base,
-                 corrfactor * np.cbrt(means),
-                 '--k',
-                 label=base_name,
-                 lw=2)
-
-        plt.fill_between(arr_base,
-                         corrfactor * np.cbrt(means - stds),
-                         corrfactor * np.cbrt(means + stds),
-                         color='k',
-                         alpha=.3)
-
-
-
-    # the variation loop
-    for i, (var_value, color, name) in enumerate(zip(base_array, color_remap, names_array)):
-
-        # color generation from the 0.5-0.9 space
-        color = cmap((color - 0.5) / (0.9 - 0.5) * 0.8 + 0.1)
-
-        means, stds, pre_buckets = partial_function(**{free_kwarg: var_value})
-
-        plt.plot(arr_base,
-                 corrfactor * np.cbrt(means),
-                 '--',
-                 color=color,
-                 label=name,
-                 lw=2)
-
-        plt.fill_between(arr_base,
-                         corrfactor * np.cbrt(means - stds),
-                         corrfactor * np.cbrt(means + stds),
-                         color=color,
-                         alpha=.3)
-
-    # here what is plotted is varied as well.
-    plt.legend(loc='best', ncol=3, title=array_vals_name)
-
-    # and y-axis here needs to be adjusted dynamically as well
-    #plt.axis([0.95, 2.05, y_min, y_max])
-    plt.savefig(os.path.join(Plotdir, "Ploidy_vs_Cell_Diameter_%s.png" % array_vals_name.replace(" ", "_")))
-    plt.close()
-
-def complex_size_swipe():
+def complex_size_swipe(Sweep_Data, arr_base, Plot_Parameters):
     """
     Plots a distribution of complex sizes
     """
-    Title = 'Cell diameter vs ploidy vs complex size'
-    base = np.linspace(0.0, 1.0, 20).tolist()
-    arr_base = np.array(base)
-    arr_base += 1
-    cmap = get_cmap('brg')
+    Title = Plot_Parameters["Title"]
+    cmap = get_cmap("brg", len(Sweep_Data))
     plt.title(Title)
-    plt.plot(arr_base, corrfactor*np.cbrt(arr_base), '--k', label='1', lw=2)
+    plt.plot(arr_base, corrfactor*np.cbrt(arr_base), '--k', label=str(Plot_Parameters["base_label"]), lw=2)
     
     ax = plt.gca()
     ax.set_axisbelow(True)
@@ -144,24 +44,22 @@ def complex_size_swipe():
     ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
     ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
     
-    plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
-    plt.yticks(np.linspace(8, 15, 8), [8, '', 10, '', 12, '', 14, ''])
+    #plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
+    #plt.yticks(np.linspace(8, 15, 8), [8, '', 10, '', 12, '', 14, ''])
     
     plt.xlabel("Ploidy")
     plt.ylabel("Equivalent Diameter")
     
-    complex_sizes = [2, 5, 10, 20, 40]
+    for ii, c_size in enumerate(sorted(Sweep_Data.keys())):
+        c = cmap(ii)
     
-    for c_size in complex_sizes:
-        c = cmap(c_size/40.*0.8+0.1)
-    
-        means, stds, buckets = core_sim_loop(base,[c_size], 0.75, 20, [])
+        means, stds, buckets = Sweep_Data[c_size]
     
         plt.plot(arr_base,
                  corrfactor*np.cbrt(means),
                  '--',
                  color=c,
-                 label=c_size, lw=2)
+                 label=c_size * Plot_Parameters["label_factor"], lw=2)
     
         plt.fill_between(arr_base,
                          corrfactor*np.cbrt(means-stds),
@@ -170,9 +68,11 @@ def complex_size_swipe():
                          alpha=.3)
     
     
-    plt.legend(loc='best', ncol=3, title='complex size')
+    #plt.legend(loc='best', ncol=3, title='complex size')
+    plt.legend(loc='best', ncol=3, title=Plot_Parameters["legend_title"])
     #plt.axis([0.95, 2.05, 8, 15])
-    plt.savefig(os.path.join(Plotdir, "%s.png" % Title.replace(" ", "_")))
+    #plt.savefig(os.path.join(Plotdir, "%s.png" % Title.replace(" ", "_")))
+    plt.savefig(Plot_Parameters["Figure_File_Name"])
     plt.close()
 
 def plot_abundances(buckets):
@@ -182,33 +82,18 @@ def plot_abundances(buckets):
     for key, value_matrix in buckets.iteritems():
     
         plt.figure()
-        plt.title('Molecules abundance vs ploidy % s for complex size %s' % (curr_corr, key))
+        plt.title('Molecules abundance vs ploidy for complex size %s' % key)
     
         #print value_matrix
     
         norm = value_matrix[0, 0] + value_matrix[0, 2]
         value_matrix /= norm
     
-        plt.plot(arr_base,
-                 value_matrix[:, 0],
-                 '-k',
-                 label='complexes',
-                 lw=2
-                 )
+        plt.plot(arr_base, value_matrix[:, 0], '-k', label='complexes', lw=2)
     
-        plt.plot(arr_base,
-                 value_matrix[:, 2],
-                 '-b',
-                 label='free proteins',
-                 lw=2
-                 )
+        plt.plot(arr_base, value_matrix[:, 2], '-b', label='free proteins', lw=2)
     
-        plt.plot(arr_base,
-                 value_matrix[:, 0] + value_matrix[:, 2],
-                 '-r',
-                 label='total molecules',
-                 lw=2
-                 )
+        plt.plot(arr_base, value_matrix[:, 0] + value_matrix[:, 2], '-r', label='total molecules', lw=2)
     
         plt.fill_between(arr_base,
                          value_matrix[:, 0]+value_matrix[:, 3],
@@ -242,7 +127,7 @@ def plot_abundances(buckets):
         plt.xlabel("Ploidy")
         plt.ylabel("Abundance relative to total free molecule abundance in haploid")
     
-        plt.savefig(os.path.join(Plotdir, "Abundance_vs_total_free_molecule.png"))
+        plt.savefig(os.path.join(Plotdir, "Abundance_vs_total_free_molecule_Size_%s.png" % key))
         plt.close()
 
 def Plot_Osmotic_Pressure(y_min=8, y_max=18, yticks=8):
@@ -308,22 +193,23 @@ def Plot_Osmotic_Pressure(y_min=8, y_max=18, yticks=8):
     plt.close()
     #plot_abundances(pre_buckets)
 
-def abundance_correlation_swipe():
+def Plot_Sweep_Data(Sweepdatafile, sweep_parameter):
     """
-    Runs the simulations for different complex abundances, alpha
-    values and ideality correction factors
+    Plot the sweep data for the different sweep parameters
     """
-    corr_vars = np.linspace(0.5, 0.9, 5)
-    kwargs = {'abundance_correlation': None, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': 1}
-    diameter_plot_array(kwargs, corr_vars, corr_vars*100, 0, 0, 'complex abundance corr. (%)', 8, 15, 8)
-
-    corr_vars = np.linspace(0.15, 0.95, 5)
-    kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': None, 'ideality_correction': 1}
-    diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'alpha value. (%)', 4, 14, 11)
     
-    corr_vars = np.linspace(0.5, 1.5, 6)
-    kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': None}
-    diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'ideality correction factor. (%)', 8, 15, 8)
+    with open(Sweepdatafile) as fp: Sweep_Values = load(fp)
+    arr_base = Sweep_Values["arr_base"]
+    Sweep_Data = Sweep_Values["Sweep_Data"]
+    print list(enumerate(sorted(Sweep_Data.keys())))
+    Plot_Parameters = {
+        "Title" : "Cell diameter vs ploidy vs %s" % sweep_parameter,
+        "legend_title" : sweep_parameter,
+        "base_label" : Base_Labels[sweep_parameter],
+        "label_factor" : Label_Factor[sweep_parameter]
+        }
+    Plot_Parameters["Figure_File_Name"] = os.path.join(Plotdir, "%s.png" % Plot_Parameters["Title"].replace(" ", "_"))
+    complex_size_swipe(Sweep_Data, arr_base, Plot_Parameters)
 
 
 if __name__ == '__main__':
@@ -339,6 +225,7 @@ if __name__ == '__main__':
     means = Sim_Data["means"]
     stds = Sim_Data["stds"]
     arr_base = Sim_Data["arr_base"]
+    buckets = Sim_Data["buckets"]
     Observed_Volume, Predicted_Volume = Cell_Volumes(Sim_Data["arr_base"], Sim_Data["means"], Ploidyfile = Ploidyfile)
     press = Osmotic_Pressure(Observed_Volume, Predicted_Volume)
     aneuploid_means = press[1:-1]
@@ -359,6 +246,17 @@ if __name__ == '__main__':
     Suptitle = Suptitle1 + Suptitle2
 
     Plot_Osmotic_Pressure()
-    complex_size_swipe()
+    plot_abundances(buckets)
+    Sweepdatafile = "Complex_Sweep.dmp"
+    Plot_Sweep_Data(Sweepdatafile, "complex size")
 
-    abundance_correlation_swipe()
+    #abundance_correlation_swipe()
+    Sweepdatafile = "Abundance_Sweep.dmp"
+    Plot_Sweep_Data(Sweepdatafile, "abundance correlation")
+
+    #abundance_correlation_swipe()
+    Sweepdatafile = "Water_abundance.dmp"
+    Plot_Sweep_Data(Sweepdatafile, "water abundance")
+
+    Sweepdatafile = "Ideality_correction.dmp"
+    Plot_Sweep_Data(Sweepdatafile, "ideality correction")
