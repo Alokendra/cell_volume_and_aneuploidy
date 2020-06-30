@@ -133,9 +133,14 @@ def plot_abundance_distribution(data):
 
 if __name__ == '__main__':
     
-    Abundance_File = os.path.join("data", "4932-WHOLE_ORGANISM-integrated.txt")
-    Interaction_File = os.path.join("data", "CervBinaryHQ.txt")
-    Ploidy_File = os.path.join("data", "ploidy_size.csv")
+    Datadir = "data"
+    Abundance_File = "4932-WHOLE_ORGANISM-integrated.txt"
+    Interaction_File = "CervBinaryHQ.txt"
+    Ploidy_File = "ploidy_size.csv"
+
+    Abundance_File = os.path.join(Datadir, Abundance_File)
+    Interaction_File = os.path.join(Datadir, Interaction_File)
+    Ploidy_File = os.path.join(Datadir, Ploidy_File)
 
     abundance_range, abundance_table = create_abundance_table(Abundance_File)
     abundance_range = np.array(abundance_range)
