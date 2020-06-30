@@ -8,7 +8,8 @@ from pickle import load
 import random
 from matplotlib.cm import get_cmap
 from statsmodels.nonparametric.smoothers_lowess import lowess
-from calc_vol_press import Cell_Volume, Osmotic_Pressure
+from calc_vol_press import Cell_Volumes, Osmotic_Pressure
+from protein_abundance_preprocess import Ploidy_Data
 
 Plotdir = "figures"
 
@@ -16,7 +17,7 @@ abundance_correlation = 0.7
 large_complex_boost = 20
 large_complex_correlation = 0.85
 
-Suptitle1 = "large complex boost: x%.2f; large complex corr: %.2f, overall corr: %.2f\n" % (large_complex_boost, large_complex_correlation, base_abundance_correlation)
+Suptitle1 = "large complex boost: x%.2f; large complex corr: %.2f, overall corr: %.2f\n" % (large_complex_boost, large_complex_correlation, abundance_correlation)
 
 
 def diameter_plot_array(defautlt_params, base_array,
@@ -183,7 +184,7 @@ def plot_abundances(buckets):
         plt.figure()
         plt.title('Molecules abundance vs ploidy % s for complex size %s' % (curr_corr, key))
     
-        print value_matrix
+        #print value_matrix
     
         norm = value_matrix[0, 0] + value_matrix[0, 2]
         value_matrix /= norm
@@ -329,6 +330,7 @@ if __name__ == '__main__':
 
     Ploidyfile = "ploidy_vs_size.dmp"
     ploidy_vs_size, corrfactor = Ploidy_Data(Ploidyfile)
+    sorting_index = np.argsort(ploidy_vs_size[:, 0])
     Osmotic_Pressure_File = "osmotic_pressure.dmp"
 
     Simdatafile = "simulation_data.dmp"
@@ -336,7 +338,8 @@ if __name__ == '__main__':
     with open(Simdatafile) as fp: Sim_Data = load(fp)
     means = Sim_Data["means"]
     stds = Sim_Data["stds"]
-    Observed_Volume, Predicted_Volume = Cell_Volume(Sim_Data["arr_base"], Sim_Data["means"])
+    arr_base = Sim_Data["arr_base"]
+    Observed_Volume, Predicted_Volume = Cell_Volumes(Sim_Data["arr_base"], Sim_Data["means"], Ploidyfile = Ploidyfile)
     press = Osmotic_Pressure(Observed_Volume, Predicted_Volume)
     aneuploid_means = press[1:-1]
     euploid_means = press[[0, -1], ]
@@ -355,7 +358,7 @@ if __name__ == '__main__':
     Suptitle2 = "simulations medians ratio: 1:%.2f |" " true medians ratio: 1:%.2f" % (np.median(aneuploid_means)/np.median(euploid_means), np.median(true_aneuploid_op)/np.median(true_euploids_op))
     Suptitle = Suptitle1 + Suptitle2
 
-    Plot_Osmotic_Pressure(base_abundance_correlation=0.85)
+    Plot_Osmotic_Pressure()
     complex_size_swipe()
 
     abundance_correlation_swipe()

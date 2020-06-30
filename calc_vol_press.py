@@ -16,11 +16,12 @@ Parameters = {
 
 Abundance_Factor = lambda Pi, Vm, T = 293: np.exp(-Pi*Vm/(8.314*T))
 
-def Cell_Volumes(arr_base, means):
+def Cell_Volumes(arr_base, means, Ploidyfile = "ploidy_vs_size.dmp"):
     """
     Calculates the osmotic pressure using the protein
     abundances
     """
+    ploidy_vs_size, corrfactor = Ploidy_Data(Ploidyfile)
     interp_prediction = interp1d(arr_base, corrfactor*np.cbrt(means), kind='cubic')
 
     sorting_index = np.argsort(ploidy_vs_size[:, 0])
@@ -36,6 +37,7 @@ def Osmotic_Pressure(Observed_Volume, Predicted_Volume):
     observed volumes
     """
     alpha_0 = Abundance_Factor(Parameters["Pi"], Parameters["Vm"], Parameters["T"])
+    undervolume = Observed_Volume/Predicted_Volume
 
     press = []
     for value in undervolume:
@@ -57,7 +59,7 @@ if __name__ == "__main__":
     Simdatafile = "simulation_data.dmp"
 
     with open(Simdatafile) as fp: Sim_Data = load(fp)
-    Observed_Volume, Predicted_Volume = Cell_Volume(Sim_Data["arr_base"], Sim_Data["means"])
+    Observed_Volume, Predicted_Volume = Cell_Volume(Sim_Data["arr_base"], Sim_Data["means"], corrfactor)
     press = Osmotic_Pressure(Observed_Volume, Predicted_Volume)
 
     with open("volume_pressure_data.dmp", "w") as fp:
