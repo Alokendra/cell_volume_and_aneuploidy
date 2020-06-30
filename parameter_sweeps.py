@@ -59,7 +59,7 @@ def sweep_parameter(base, sweep_name):
     sweep_values = Sweep_Parameters[sweep_name][sweep_key]
     Data = { key : [] for key in sweep_values }
     arr_base = np.array(base) + 1
-    Sweepfile = "%s.dmp" % sweep_name.capitalize().replace(" ","_")
+    Sweepfile = os.path.join("data", "%s.dmp" % sweep_name.capitalize().replace(" ","_"))
 
     for key in sweep_values:
 
@@ -76,7 +76,8 @@ def sweep_parameter(base, sweep_name):
 
 if __name__ == '__main__':
     
-    Datastatfile = "data_stats_dump.dmp"
+    Datadir = "data"
+    Datastatfile = os.path.join(Datadir, "data_stats_dump.dmp")
     Interaction = "Paxdb"
 
     abundance_range, total_partners = Get_Abundance_Data(Datastatfile, Interaction = Interaction)

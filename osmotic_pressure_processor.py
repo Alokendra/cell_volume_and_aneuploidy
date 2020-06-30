@@ -79,14 +79,16 @@ if __name__ == '__main__':
     Datadir = "data"
     datafile = os.path.join(Datadir, "20171107_yeast.csv")
 
+    Osmotic_Pressure_Dumpfile = os.path.join(Datadir, "osmotic_pressure.dmp")
+    Osmotic_Pressure_AllDumpfile = os.path.join(Datadir, "osmotic_pressure_all.dmp")
     type_index, master_table = Build_Table(datafile)
     Ploidy_Data = Collect_Data(type_index, master_table)
 
     print "means ratio: 1:%f" % (np.mean(Ploidy_Data["Euploids"]["cluster_means"])/np.mean(Ploidy_Data["Aneuploids"]["cluster_means"]))
 
 
-    with open('osmotic_pressure.dmp', 'w') as fp:
+    with open(Osmotic_Pressure_Dumpfile, 'w') as fp:
         dump((Ploidy_Data["Euploids"]["cluster_means"], Ploidy_Data["Aneuploids"]["cluster_means"]), fp)
-    with open('osmotic_pressure_all.dmp', 'w') as fp:
+    with open(Osmotic_Pressure_AllDumpfile, 'w') as fp:
         dump(Ploidy_Data, fp)
 

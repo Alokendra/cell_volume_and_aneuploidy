@@ -46,5 +46,10 @@ for loc, sub_folders, files in walk(directory):
             master_table.append([ploidy, mean, std])
 
 master_table = np.array(master_table)
-pickle.dump(master_table, open('ploidy_vs_size.dmp', 'w'))
+Datadir = "data"
+Dumpfile = path.join(Datadir, "ploidy_vs_size.dmp")
+
+with open(Dumpfile, "w") as fp:
+    pickle.dump(master_table, fp)
+
 print master_table

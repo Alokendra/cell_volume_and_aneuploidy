@@ -73,7 +73,8 @@ def boxplots(Cluster_Mean_Data, Figfilename = ""):
 
 if __name__ == '__main__':
 
-    Dumpfile = "osmotic_pressure_all.dmp"
+    Datadir = "data"
+    Dumpfile = os.path.join(Datadir, "osmotic_pressure_all.dmp")
     Plotdir = "figures"
 
     with open(Dumpfile) as fp: Ploidy_Data = pickle.load(fp)

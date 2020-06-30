@@ -141,6 +141,8 @@ if __name__ == '__main__':
     Abundance_File = os.path.join(Datadir, Abundance_File)
     Interaction_File = os.path.join(Datadir, Interaction_File)
     Ploidy_File = os.path.join(Datadir, Ploidy_File)
+    Ploidy_Dumpfile = os.path.join(Datadir, "ploidy_vs_size.dmp")
+    Datastatfile = os.path.join(Datadir, "data_stats_dump.dmp")
 
     abundance_range, abundance_table = create_abundance_table(Abundance_File)
     abundance_range = np.array(abundance_range)
@@ -165,5 +167,5 @@ if __name__ == '__main__':
     slope, intercept, r_value, p_value, std_err = stats.linregress(np.log(partner_abundances[sel, 0]), np.log(partner_abundances[sel, 1]))
     print slope, intercept, r_value, p_value, std_err
     
-    with open('ploidy_vs_size.dmp', 'w') as fp: pickle.dump(exp_ploid_vs_size, fp)
-    with open('data_stats_dump.dmp', 'w') as fp: pickle.dump((abundance_range, total_partners), fp)
+    with open(Ploidy_Dumpfile, 'w') as fp: pickle.dump(exp_ploid_vs_size, fp)
+    with open(Datastatfile, 'w') as fp: pickle.dump((abundance_range, total_partners), fp)

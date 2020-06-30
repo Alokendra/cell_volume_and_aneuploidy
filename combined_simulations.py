@@ -96,7 +96,9 @@ def average_simulation_data(re_runs, buckets, alpha=1, ideality_correction=1):
 
 if __name__ == "__main__":
 
-    Datastatfile = "data_stats_dump.dmp"
+    Datadir = "data"
+    Datastatfile = os.path.join(Datadir, "data_stats_dump.dmp")
+    Simulationdatafile = os.path.join(Datadir, "simulation_data.dmp")
     Interaction = "Paxdb"
 
     abundance_range, total_partners = Get_Abundance_Data(Datastatfile, Interaction = Interaction)
@@ -112,5 +114,5 @@ if __name__ == "__main__":
 
     Sim_Data = {"arr_base" : arr_base, "means" : means, "stds" : stds, "buckets" : pre_buckets}
 
-    with open("simulation_data.dmp", "w") as fp: dump(Sim_Data, fp)
+    with open(Simulationdatafile, "w") as fp: dump(Sim_Data, fp)
 

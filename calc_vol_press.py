@@ -53,16 +53,18 @@ def Osmotic_Pressure(Observed_Volume, Predicted_Volume):
 
 if __name__ == "__main__":
 
-    Ploidyfile = "ploidy_vs_size.dmp"
+    Datadir = "data"
+    Ploidyfile = os.path.join(Datadir, "ploidy_vs_size.dmp")
     ploidy_vs_size, corrfactor = Ploidy_Data(Ploidyfile)
 
-    Simdatafile = "simulation_data.dmp"
+    Simdatafile = os.path.join(Datadir, "simulation_data.dmp")
+    Volumedatafile = os.path.join(Datadir, "volume_pressure_data.dmp")
 
     with open(Simdatafile) as fp: Sim_Data = load(fp)
     Observed_Volume, Predicted_Volume = Cell_Volume(Sim_Data["arr_base"], Sim_Data["means"], corrfactor)
     press = Osmotic_Pressure(Observed_Volume, Predicted_Volume)
 
-    with open("volume_pressure_data.dmp", "w") as fp:
+    with open(Volumedatafile, "w") as fp:
         dump({ "Observed_Volume" : Observed_Volume,
                "Predicted_Volume" : Predicted_Volume,
                "press" : press }, fp)

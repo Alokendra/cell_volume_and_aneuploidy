@@ -214,12 +214,13 @@ def Plot_Sweep_Data(Sweepdatafile, sweep_parameter):
 
 if __name__ == '__main__':
 
-    Ploidyfile = "ploidy_vs_size.dmp"
+    Datadir = "data"
+    Ploidyfile = os.path.join(Datadir, "ploidy_vs_size.dmp")
     ploidy_vs_size, corrfactor = Ploidy_Data(Ploidyfile)
     sorting_index = np.argsort(ploidy_vs_size[:, 0])
-    Osmotic_Pressure_File = "osmotic_pressure.dmp"
+    Osmotic_Pressure_File = os.path.join(Datadir, "osmotic_pressure.dmp")
 
-    Simdatafile = "simulation_data.dmp"
+    Simdatafile = os.path.join(Datadir, "simulation_data.dmp")
 
     with open(Simdatafile) as fp: Sim_Data = load(fp)
     means = Sim_Data["means"]
@@ -247,16 +248,16 @@ if __name__ == '__main__':
 
     Plot_Osmotic_Pressure()
     plot_abundances(buckets)
-    Sweepdatafile = "Complex_Sweep.dmp"
+    Sweepdatafile = os.path.join(Datadir, "Complex_size.dmp")
     Plot_Sweep_Data(Sweepdatafile, "complex size")
 
     #abundance_correlation_swipe()
-    Sweepdatafile = "Abundance_Sweep.dmp"
+    Sweepdatafile = os.path.join(Datadir, "Abundance_correlation.dmp")
     Plot_Sweep_Data(Sweepdatafile, "abundance correlation")
 
     #abundance_correlation_swipe()
-    Sweepdatafile = "Water_abundance.dmp"
+    Sweepdatafile = os.path.join(Datadir, "Water_abundance.dmp")
     Plot_Sweep_Data(Sweepdatafile, "water abundance")
 
-    Sweepdatafile = "Ideality_correction.dmp"
+    Sweepdatafile = os.path.join(Datadir, "Ideality_correction.dmp")
     Plot_Sweep_Data(Sweepdatafile, "ideality correction")
