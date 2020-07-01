@@ -32,7 +32,7 @@ if [ $Status -eq 0 ] ; then
     if [ "$Op" = "y" ] ; then
 	jupyter notebook "$NOTEBOOKIPYNB"
     else
-	Command="jupyter notebook $NOTEBOOKIPYNB"
+	Command="source pyenv/bin/activate ; jupyter notebook $NOTEBOOKIPYNB"
 	echo "Open the notebook with command: \"$Command\""
 	echo "End of script.."
     fi
