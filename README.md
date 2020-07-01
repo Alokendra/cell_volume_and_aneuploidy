@@ -7,6 +7,11 @@ pressure dependence on the ploidy of a cell. This repository
 provides an interactive front-end to the model through a [Jupyter
 Notebook](https://jupyter.org).
 
+## Cloning
+
+This repository data files are maintained using [git-lfs](https://github.com/git-lfs/git-lfs). In order to clone this from command line `git-lfs` needs to be installed in the target system. The latest binary for linux can be obtained from [here](https://github.com/git-lfs/git-lfs/releases/download/v2.11.0/git-lfs-linux-amd64-v2.11.0.tar.gz). After unpacking, simply run the `install.sh` script provided. After installation the repository can be cloned normally.
+
+
 ## Installation
 
 To install and view the jupyter notebook create a copy of the
