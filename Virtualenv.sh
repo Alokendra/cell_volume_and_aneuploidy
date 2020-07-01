@@ -9,6 +9,7 @@ set -e
 VIRTUALENVNAME=pyenv
 NOTEBOOKFILE="Cell_Volume_Aneuploidy_Osmotic_Stress.md"
 
+mkdir -p docs figures
 virtualenv ./$VIRTUALENVNAME
 echo "Virtual environment $VIRTUALENVNAME installed, switching"
 source ./$VIRTUALENVNAME/bin/activate
