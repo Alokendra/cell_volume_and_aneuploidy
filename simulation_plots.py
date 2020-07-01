@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from pickle import load
 import random
 from matplotlib.cm import get_cmap
-from statsmodels.nonparametric.smoothers_lowess import lowess
+#from statsmodels.nonparametric.smoothers_lowess import lowess
 from calc_vol_press import Cell_Volumes, Osmotic_Pressure
 from protein_abundance_preprocess import Ploidy_Data
 
