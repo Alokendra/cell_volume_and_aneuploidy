@@ -13,6 +13,9 @@ from protein_abundance_preprocess import Ploidy_Data
 
 Plotdir = "figures"
 
+Datadir = "data"
+Ploidyfile = os.path.join(Datadir, "ploidy_vs_size.dmp")
+ploidy_vs_size, corrfactor = Ploidy_Data(Ploidyfile)
 abundance_correlation = 0.7
 large_complex_boost = 20
 large_complex_correlation = 0.85
@@ -201,7 +204,6 @@ def Plot_Sweep_Data(Sweepdatafile, sweep_parameter):
     with open(Sweepdatafile) as fp: Sweep_Values = load(fp)
     arr_base = Sweep_Values["arr_base"]
     Sweep_Data = Sweep_Values["Sweep_Data"]
-    print list(enumerate(sorted(Sweep_Data.keys())))
     Plot_Parameters = {
         "Title" : "Cell diameter vs ploidy vs %s" % sweep_parameter,
         "legend_title" : sweep_parameter,
