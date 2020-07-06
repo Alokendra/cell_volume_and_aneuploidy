@@ -1,3 +1,5 @@
 *.dmp filter=lfs diff=lfs merge=lfs -text
 data/*.csv filter=lfs diff=lfs merge=lfs -text
 data/*.txt filter=lfs diff=lfs merge=lfs -text
+data/complex_size_data/*.txt filter=lfs diff=lfs merge=lfs -text
+data/complex_size_data/*.tsv filter=lfs diff=lfs merge=lfs -text
