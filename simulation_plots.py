@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from pickle import load
 import random
 from matplotlib.cm import get_cmap
-#from statsmodels.nonparametric.smoothers_lowess import lowess
+from statsmodels.nonparametric.smoothers_lowess import lowess
 from calc_vol_press import Cell_Volumes, Osmotic_Pressure
 from protein_abundance_preprocess import Ploidy_Data
 
@@ -213,6 +213,32 @@ def Plot_Sweep_Data(Sweepdatafile, sweep_parameter):
     Plot_Parameters["Figure_File_Name"] = os.path.join(Plotdir, "%s.png" % Plot_Parameters["Title"].replace(" ", "_"))
     complex_size_swipe(Sweep_Data, arr_base, Plot_Parameters)
 
+def Varying_Alpha(Sweepdatafile, Samples = 100, alpha_bounds = (0.7, 1.0, 0.05), lowess_params = {}):
+    """
+    Generates the plots for different alpha values
+    and plots between two bounding values
+    """
+    with open(Sweepdatafile) as fp: Sweep_Values = load(fp)
+    arr_base = Sweep_Values["arr_base"]
+    means = Sweep_Values["means"]
+    stds = Sweep_Values["stds"]
+    Ext_Means = np.repeat(means, Samples).reshape((means.size, Samples))
+    alpha = np.random.choice(np.arange(*alpha_bounds), (means.size, Samples))
+    Adjusted_Volume = Ext_Means * alpha
+    Adjusted_Diameter = 8.6*np.power(Adjusted_Volume, 0.3)
+    Mean_Diameter = np.mean(Adjusted_Diameter, axis = 1)
+
+    x, smooth_diameter = lowess(Mean_Diameter, arr_base, frac = 0.2, it = 5).T
+    plt.plot(x, smooth_diameter, 'r')
+    plt.plot(arr_base, 8.6*np.power(means, 0.3), '--b')
+    plt.plot(arr_base, 8.6*np.power(means*0.7, 0.3), '--b')
+    plt.xlabel("Ploidy")
+    plt.ylabel("Eq. Diameter")
+    plt.title("Varying Water Abundance Factor")
+
+    plt.savefig(os.path.join(Plotdir, "Varying_Alpha.png"))
+    plt.close()
+
 
 if __name__ == '__main__':
 
@@ -233,6 +259,8 @@ if __name__ == '__main__':
     press = Osmotic_Pressure(Observed_Volume, Predicted_Volume)
     aneuploid_means = press[1:-1]
     euploid_means = press[[0, -1], ]
+
+    Varying_Alpha(means, stds, arr_base)
 
     with open(Osmotic_Pressure_File) as fp:
         true_euploids_op, true_aneuploid_op = load(fp)

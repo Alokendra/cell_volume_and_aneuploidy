@@ -13,13 +13,13 @@ jupyter:
     name: py2dev
 ---
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 ## Cell Volume dependence on protein abundance and osmotic stress
 
 This document is created to explore some of the results from Tsai et. al. biophysical model which that derives a relationship between cell volume and ploidy by showing how changes in the *protein abundances* and *composition* in aneuploid cells creates a hypo osmotic stress which causes a change in cell volume. Here we show the main equations of the model and its application to show how cell volume changes as a function of ploidy under different combinations of biophysical parameters of the cell. For the ease of exploration sliders are created for some of the key parameters of the model that can be changed interactively.
 <!-- #endregion -->
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 ### Model Equations
 
 Considering transport of water and by balancing the chemical potential of water inside and outside the cell one gets
@@ -27,7 +27,7 @@ Considering transport of water and by balancing the chemical potential of water 
 $$\mu_{H_2O}^{in} - RT \ln c_{H_2O}^{in} - \int_P^{P + \Pi}V_mdp = \mu_{H_2O}^{out} + \Delta\mu_{H_2O}^{memb} - RT \ln c_{H_2O}^{out}$$
 <!-- #endregion -->
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 At equilibrium, by equating the chemical potential of water inside and outside one can write
 
 $$\Pi = -\frac{RT}{V_m}\ln{\left(\frac{c_{H_2O}^{in}}{c_{H_2O}^{out}c_{H_2O}^{memb}}\right)} = -\frac{RT}{V_m}\ln{\alpha}$$
@@ -38,13 +38,13 @@ Considering that water is the dominant component of the cell the effective volum
 $$V_{eff} = V - V_m \propto N_p\alpha$$
 <!-- #endregion -->
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 If there are $N_k$ proteins of type k (where $k = 1,2,\ldots,N$) in the cell and $N_c$ complexes of type c (where $c = 1,2,\ldots,M$ then the total number of free proteins is given by [Tsai 2019][tsai2019hypo]
 
 $$N_p = \sum_{k=1}^{N}N_k - \sum_{c=1}^{M}\min_{k \in S_c}(N_k)N_c$$
 <!-- #endregion -->
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 Here, the second term considers that the number of complexes of type $c$ is equal to the number of its least abundant component.
 This holds if every protein participates in a single complex and every complex assembles fully which are assumed here.
 Now if we have aneuploid cells then for particular proteins their amount may double due to duplication of gene coding.
@@ -53,7 +53,7 @@ If $A_k$ is the abundance of protein $k$ and $P_k$ is the probability of gene du
 $$V_{eff} = V - V_m = \alpha \left(\sum_{k=1}^{N}A_kP_k - \sum_{c=1}^M\min_{k \in S_c}(A_kP_k)N_c\right)$$
 <!-- #endregion -->
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 To obtain the effective volume one needs estimates of relative abundances of proteins and average sizes of protein complexes. In [Tsai 2019][tsai2019hypo] the relative abundances were obtained from PAX-DB project dataset and average protein complex size was estimated using two methods
 
 - Average number of protein-protein interactions.
@@ -65,13 +65,13 @@ A correction factor was also introduced for protein abundance to account for the
 [tsai2019hypo]: #References
 <!-- #endregion -->
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 ### Simulation
 
 The simulations were conducted for different sets of parameters. First the important modules were imported. Numpy and matplotlib needs to be installed.
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "skip"}
+```python slideshow={"slide_type": "-"}
 import os, sys
 from random import shuffle
 import numpy as np
@@ -80,16 +80,16 @@ from combined_simulations import Get_Abundance_Data, core_sim_loop, average_simu
 from protein_abundance_preprocess import Ploidy_Data
 from protein_abundances import generate_complex_ids, last_complex_adjustment, align_complex_abundances,\
 sorted_complex_abundances
-from simulation_plots import Plot_Sweep_Data
+from simulation_plots import Plot_Sweep_Data, Varying_Alpha
 ```
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 #### Complex size distribution
 
 The first case we consider is the simplest, where all complexes are present at the same abundance (6). The different parameters of the models are set below
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "subslide"}
+```python slideshow={"slide_type": "-"}
 Sweep_Parameters = {
     "complex size" : {
         "sweep_elem" : "total_partners",
@@ -101,11 +101,11 @@ Sweep_Parameters = {
 }
 ```
 
-<!-- #region slideshow={"slide_type": "skip"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 We can initialize some other variables as below
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "skip"}
+```python slideshow={"slide_type": "-"}
 Datadir = "data"
 Plotdir = "figures"
 Datastatfile = os.path.join(Datadir, "data_stats_dump.dmp")
@@ -116,11 +116,11 @@ base = np.linspace(0.0, 1.0, 20).tolist()
 arr_base = np.array(base) + 1
 ```
 
-<!-- #region slideshow={"slide_type": "skip"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 Then we can create the different cases as below
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "skip"}
+```python slideshow={"slide_type": "-"}
 def sweep_parameter(base, sweep_name):
     """
     Performs a sweep over complex sizes
@@ -145,19 +145,19 @@ def sweep_parameter(base, sweep_name):
     with open(Sweepfile, "w") as fp: dump({"Sweep_Data" : Data, "arr_base" : arr_base}, fp)
 ```
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 Next we can run the sweep over the complex sizes (in this case there is only one, 6)
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "slide"}
+```python slideshow={"slide_type": "-"}
 sweep_parameter(base, "complex size")
 ```
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 Then we can import the plotting module and get the plots as below
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "slide"}
+```python slideshow={"slide_type": "-"}
 Sweepdatafile = os.path.join(Datadir, "Complex_size.dmp")
 from IPython.display import Image, display
 from ipywidgets import interactive
@@ -173,11 +173,11 @@ p = interactive(plot_complex_size, Size = widgets.IntSlider(min=5, max=50, step=
 p
 ```
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 Next we will change the complex numbers over a range instead of a single value and rerun the simulation again
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "slide"}
+```python slideshow={"slide_type": "-"}
 def plot_complex_sweep(abundance_correlation, alpha):
     Sweep_Parameters["complex size"]["total_partners"] = [2, 5, 10, 20, 40]
     Sweep_Parameters["complex size"]["abundance_correlation"] = abundance_correlation
@@ -193,13 +193,13 @@ q = interactive(plot_complex_sweep,
 q
 ```
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 #### Abundance Correlation Factor
 
 In a similar way we can set the the abundance correlation factor as below
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "slide"}
+```python slideshow={"slide_type": "-"}
 Sweep_Parameters["abundance correlation"] = {
         "sweep_elem" : "abundance_correlation",
         "total_partners" : 2,
@@ -209,11 +209,11 @@ Sweep_Parameters["abundance correlation"] = {
         }
 ```
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 Now we can run the simulation and plot the results in a similar way
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "slide"}
+```python slideshow={"slide_type": "-"}
 def plot_abundance_correlation(total_partners, alpha):
     Sweep_Parameters["abundance correlation"]["total_partners"] = total_partners
     Sweep_Parameters["abundance correlation"]["abundance_correlation"] = np.linspace(0.5, 0.9, 5).tolist()
@@ -229,13 +229,13 @@ r = interactive(plot_abundance_correlation,
 r
 ```
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 #### Water abundance factor
 
 Next we can change the water abundance factor and see its effect
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "slide"}
+```python slideshow={"slide_type": "-"}
 Sweep_Parameters["water abundance"] = {
         "sweep_elem" : "alpha",
         "total_partners" : 5,
@@ -245,7 +245,7 @@ Sweep_Parameters["water abundance"] = {
         }
 ```
 
-```python slideshow={"slide_type": "slide"}
+```python slideshow={"slide_type": "-"}
 def plot_water_abundance(total_partners, abundance_correlation):
     Sweep_Parameters["water abundance"]["total_partners"] = total_partners
     Sweep_Parameters["water abundance"]["abundance_correlation"] = abundance_correlation
@@ -261,13 +261,13 @@ s = interactive(plot_water_abundance,
 s
 ```
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+<!-- #region slideshow={"slide_type": "-"} -->
 #### Ideality Correction Factor
 
 Finally we can change the ideality correction factor as below
 <!-- #endregion -->
 
-```python slideshow={"slide_type": "slide"}
+```python slideshow={"slide_type": "-"}
 Sweep_Parameters["ideality correction"] = {
         "sweep_elem" : "ideality_correction",
         "total_partners" : 20,
@@ -277,7 +277,7 @@ Sweep_Parameters["ideality correction"] = {
         }
 ```
 
-```python slideshow={"slide_type": "slide"}
+```python slideshow={"slide_type": "-"}
 def plot_ideality_correction(total_partners, abundance_correlation, alpha):
     Sweep_Parameters["ideality correction"]["total_partners"] = total_partners
     Sweep_Parameters["ideality correction"]["abundance_correlation"] = abundance_correlation
@@ -295,7 +295,17 @@ t = interactive(plot_ideality_correction,
 t
 ```
 
-<!-- #region slideshow={"slide_type": "slide"} -->
+#### Varying Water Abundance Factor
+
+Lastly we can run the simulation by varying the water abundance factor $\alpha$ between 0.7 and 1 for different populations and see the effect and whether the results remain bounded.
+
+```python
+Simdatafile = os.path.join(Datadir, "simulation_data.dmp")
+Varying_Alpha(Simdatafile)
+display(Image(filename='figures/Varying_Alpha.png'))
+```
+
+<!-- #region slideshow={"slide_type": "-"} -->
 ### References
  
 1. Hung-Ji Tsai, Anjali R Nelliat, Mohammad Ikbal Choudhury, Andrei Kuchar-
