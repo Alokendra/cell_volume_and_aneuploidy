@@ -103,6 +103,7 @@ def calculate_free_mol_entities(aneuploidy_factor, complex_contents, abundances,
         bound_proteins += loc_min * len(complexes)
 
         complex_size = len(complexes)
+            
         # yup, we are doing it with pointers and pointers are uncool and unpythonic.
         if buckets and complex_size in buckets.keys():
             buckets[complex_size][0] += loc_min
@@ -112,3 +113,40 @@ def calculate_free_mol_entities(aneuploidy_factor, complex_contents, abundances,
     total_molecules = total_proteins - bound_proteins + total_complexes
 
     return total_molecules, buckets
+
+def complex_distribution(complex_contents, abundances):
+    """
+    Calculates the volume contributions from proteins and the
+    counterions they release
+    """
+    complex_dist = {}
+    contribution_ions = 0
+
+    for complexes in complex_contents:
+        complex_size = len(complexes)
+        #Get the complex size distribution
+        if complex_size in complex_dist:
+            complex_dist[complex_size] += np.min(abundances[complexes])
+        else:
+            complex_dist[complex_size] = np.min(abundances[complexes])
+
+
+    return complex_dist
+
+def Ion_Contribution(complex_dist, ploidy):
+    """
+    Calculates the contribution to the osmotic pressure
+    of `nproteins` species forming complex of size `size`.
+    """
+    mp = 0.1
+    transport = 1
+    contrib = 0
+    for size, nproteins in complex_dist.items():
+        mn = size*mp
+        prefac = (mn + 1)*nproteins/(size * transport)
+        ratio = (mp + 1)/(mn + 1)
+
+        contrib += prefac * (1 + ploidy**size + size * ratio * (1 - ploidy**size - (1 - ploidy)**size))
+
+    return contrib
+    

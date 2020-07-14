@@ -6,7 +6,7 @@ import numpy as np
 from pickle import load, dump
 import random
 from protein_abundance_preprocess import Partners_Paxdb, Partners_Gamma
-from protein_abundances import generate_complex_ids, last_complex_adjustment, align_complex_abundances, sorted_complex_abundances, calculate_free_mol_entities
+from protein_abundances import generate_complex_ids, last_complex_adjustment, align_complex_abundances, sorted_complex_abundances, calculate_free_mol_entities, complex_distribution, Ion_Contribution
 
 random.seed(42)
 
@@ -102,17 +102,33 @@ if __name__ == "__main__":
     Interaction = "Paxdb"
 
     abundance_range, total_partners = Get_Abundance_Data(Datastatfile, Interaction = Interaction)
+    Ion_Alignment = False
     base = np.linspace(0.0, 1.0, 20).tolist()
     arr_base = np.array(base) + 1
+    ion_contributions = []
     #sys.exit(1)
     complex_contents = generate_complex_ids(total_partners, len(abundance_range))
     complex_contents = last_complex_adjustment(complex_contents, len(abundance_range))
+    unaligned_abundances = np.copy(abundance_range)
     aligned_abundances = align_complex_abundances(complex_contents, abundance_range, abundance_correlation = abundance_correlation)
     aligned_abundances = sorted_complex_abundances(aligned_abundances, complex_contents[-1], abundance_range, abundance_correlation =  abundance_correlation)
     re_runs, buckets = core_sim_loop(base, complex_contents, aligned_abundances, buckets = [3, 15])
+
+    #Calculate volumes from ion contributions
+    if not Ion_Alignment:
+        complex_dist = complex_distribution(complex_contents, unaligned_abundances)
+    else:
+        complex_dist = complex_distribution(complex_contents, aligned_abundances)
+    for aneuploidy_factor in base:
+        ion_contributions.append(Ion_Contribution(complex_dist, aneuploidy_factor))
+
+    ion_contributions = np.array(ion_contributions)
+    Norm_Factor = (0.7*ideality_correction)/ion_contributions[0]
+    ion_contributions = ion_contributions * Norm_Factor
+            
     means, stds, pre_buckets = average_simulation_data(re_runs, buckets, alpha = alpha, ideality_correction = ideality_correction)
 
-    Sim_Data = {"arr_base" : arr_base, "means" : means, "stds" : stds, "buckets" : pre_buckets}
+    Sim_Data = {"arr_base" : arr_base, "means" : means, "stds" : stds, "buckets" : pre_buckets, "ion_contributions" : ion_contributions, "complex_dist" : complex_dist}
 
     with open(Simulationdatafile, "w") as fp: dump(Sim_Data, fp)
 

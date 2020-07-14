@@ -8,7 +8,7 @@ from pickle import load
 import random
 from matplotlib.cm import get_cmap
 from statsmodels.nonparametric.smoothers_lowess import lowess
-from calc_vol_press import Cell_Volumes, Osmotic_Pressure
+from calc_vol_press import Cell_Volumes, Cell_Volume_Ions, Osmotic_Pressure
 from protein_abundance_preprocess import Ploidy_Data
 
 Plotdir = "figures"
@@ -32,7 +32,7 @@ Label_Factor = { "complex size" : 1,
                  "water abundance" : 100,
                  "ideality correction" : 100 }
 
-def complex_size_swipe(Sweep_Data, arr_base, Plot_Parameters):
+def complex_size_swipe(Sweep_Data, arr_base, Plot_Parameters, Ions = False):
     """
     Plots a distribution of complex sizes
     """
@@ -56,19 +56,27 @@ def complex_size_swipe(Sweep_Data, arr_base, Plot_Parameters):
     for ii, c_size in enumerate(sorted(Sweep_Data.keys())):
         c = cmap(ii)
     
-        means, stds, buckets = Sweep_Data[c_size]
+        if Ions:
+            means = Sweep_Data[c_size]
+            plt.plot(arr_base,
+                    corrfactor*np.cbrt(means),
+                    '--',
+                    color=c,
+                    label=c_size * Plot_Parameters["label_factor"], lw=2)
+
+        else:
+            means, stds, buckets = Sweep_Data[c_size]
+            plt.fill_between(arr_base,
+                            corrfactor*np.cbrt(means-stds),
+                            corrfactor*np.cbrt(means+stds),
+                            color=c,
+                            alpha=.3)
+            plt.plot(arr_base,
+                    corrfactor*np.cbrt(means),
+                    '--',
+                    color=c,
+                    label=c_size * Plot_Parameters["label_factor"], lw=2)
     
-        plt.plot(arr_base,
-                 corrfactor*np.cbrt(means),
-                 '--',
-                 color=c,
-                 label=c_size * Plot_Parameters["label_factor"], lw=2)
-    
-        plt.fill_between(arr_base,
-                         corrfactor*np.cbrt(means-stds),
-                         corrfactor*np.cbrt(means+stds),
-                         color=c,
-                         alpha=.3)
     
     
     #plt.legend(loc='best', ncol=3, title='complex size')
@@ -133,8 +141,9 @@ def plot_abundances(buckets):
         plt.savefig(os.path.join(Plotdir, "Abundance_vs_total_free_molecule_Size_%s.png" % key))
         plt.close()
 
-def Plot_Osmotic_Pressure(y_min=8, y_max=18, yticks=8):
-
+def Plot_Diameter(arr_base, legends = ["no ions", "ions"], Alignment = False):
+    
+    Suffix = "_Adjusted" if Alignment else ""
     ax = plt.gca()
     ax.set_axisbelow(True)
     ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
@@ -146,8 +155,7 @@ def Plot_Osmotic_Pressure(y_min=8, y_max=18, yticks=8):
 
     plt.plot(arr_base,
              corrfactor * np.cbrt(means),
-             '--k',
-             label='',
+             '--b',
              lw=2)
 
     plt.fill_between(arr_base,
@@ -162,13 +170,19 @@ def Plot_Osmotic_Pressure(y_min=8, y_max=18, yticks=8):
                  yerr=ploidy_vs_size[sorting_index, 2]*corrfactor,
                  fmt='ro--')
 
-    plt.legend(loc='best', ncol=3)
+    plt.plot(arr_base, corrfactor * np.cbrt(ion_contributions),
+             '--g', alpha = 0.3, lw=3)
 
-    plt.savefig(os.path.join(Plotdir, "Cell_Diameter_vs_Ploidy.png"))
+    plt.legend(legends)
+
+    plt.savefig(os.path.join(Plotdir, "Cell_Diameter_vs_Ploidy%s.png" % Suffix))
     plt.close()
+        
+def Plot_Osmotic_Pressure(Case = "No_ions", Alignment = False):
 
 
     plt.suptitle(Suptitle)
+    Suffix = "_Aligned" if Alignment else ""
 
     bplot1 = plt.boxplot([euploid_means, aneuploid_means],
                          patch_artist=True
@@ -192,36 +206,41 @@ def Plot_Osmotic_Pressure(y_min=8, y_max=18, yticks=8):
                                            'simulated\naneuploid\nturgor'])
 
     #plt.show()
-    plt.savefig(os.path.join(Plotdir, "Turgor_Pressure_euploid_aneuploid.png"))
+    plt.savefig(os.path.join(Plotdir, "Turgor_Pressure_euploid_aneuploid_%s%s.png" % (Case, Suffix)))
     plt.close()
     #plot_abundances(pre_buckets)
 
-def Plot_Sweep_Data(Sweepdatafile, sweep_parameter):
+def Plot_Sweep_Data(Sweepdatafile, sweep_parameter, Ions = False, Alignment = False):
     """
     Plot the sweep data for the different sweep parameters
     """
     
     with open(Sweepdatafile) as fp: Sweep_Values = load(fp)
     arr_base = Sweep_Values["arr_base"]
-    Sweep_Data = Sweep_Values["Sweep_Data"]
+    if Ions:
+        Sweep_Data = Sweep_Values["Ion_Data"]
+    else:
+        Sweep_Data = Sweep_Values["Sweep_Data"]
+    Suffix = "_Ions" if Ions else ""
+    Suffix += "_Aligned" if Alignment else ""
     Plot_Parameters = {
         "Title" : "Cell diameter vs ploidy vs %s" % sweep_parameter,
         "legend_title" : sweep_parameter,
         "base_label" : Base_Labels[sweep_parameter],
         "label_factor" : Label_Factor[sweep_parameter]
         }
-    Plot_Parameters["Figure_File_Name"] = os.path.join(Plotdir, "%s.png" % Plot_Parameters["Title"].replace(" ", "_"))
-    complex_size_swipe(Sweep_Data, arr_base, Plot_Parameters)
+    Plot_Parameters["Figure_File_Name"] = os.path.join(Plotdir, "%s%s.png" % (Plot_Parameters["Title"].replace(" ", "_"), Suffix))
+    complex_size_swipe(Sweep_Data, arr_base, Plot_Parameters, Ions = Ions)
 
-def Varying_Alpha(Sweepdatafile, Samples = 100, alpha_bounds = (0.7, 1.0, 0.05), lowess_params = {}):
+def Varying_Alpha(Sweepdatafile, Ions = False, Samples = 100, alpha_bounds = (0.7, 1.0, 0.05), lowess_params = {}):
     """
     Generates the plots for different alpha values
     and plots between two bounding values
     """
     with open(Sweepdatafile) as fp: Sweep_Values = load(fp)
     arr_base = Sweep_Values["arr_base"]
-    means = Sweep_Values["means"]
-    stds = Sweep_Values["stds"]
+    means = Sweep_Values["means"] if not Ions else Sweep_Values["ion_contributions"]
+    Suffix = "_Ions" if Ions else ""
     Ext_Means = np.repeat(means, Samples).reshape((means.size, Samples))
     alpha = np.random.choice(np.arange(*alpha_bounds), (means.size, Samples))
     Adjusted_Volume = Ext_Means * alpha
@@ -236,31 +255,16 @@ def Varying_Alpha(Sweepdatafile, Samples = 100, alpha_bounds = (0.7, 1.0, 0.05),
     plt.ylabel("Eq. Diameter")
     plt.title("Varying Water Abundance Factor")
 
-    plt.savefig(os.path.join(Plotdir, "Varying_Alpha.png"))
+    plt.savefig(os.path.join(Plotdir, "Varying_Alpha%s.png" % Suffix))
     plt.close()
 
-
-if __name__ == '__main__':
-
-    Datadir = "data"
-    Ploidyfile = os.path.join(Datadir, "ploidy_vs_size.dmp")
-    ploidy_vs_size, corrfactor = Ploidy_Data(Ploidyfile)
-    sorting_index = np.argsort(ploidy_vs_size[:, 0])
-    Osmotic_Pressure_File = os.path.join(Datadir, "osmotic_pressure.dmp")
-
-    Simdatafile = os.path.join(Datadir, "simulation_data.dmp")
-
-    with open(Simdatafile) as fp: Sim_Data = load(fp)
-    means = Sim_Data["means"]
-    stds = Sim_Data["stds"]
-    arr_base = Sim_Data["arr_base"]
-    buckets = Sim_Data["buckets"]
-    Observed_Volume, Predicted_Volume = Cell_Volumes(Sim_Data["arr_base"], Sim_Data["means"], Ploidyfile = Ploidyfile)
-    press = Osmotic_Pressure(Observed_Volume, Predicted_Volume)
+def Ploidy_Osmotic_Pressure(press, Osmotic_Pressure_File):
+    """
+    This function calculates the euploid and aneuploid mean
+    osmotic pressure and plots them with observed values.
+    """
     aneuploid_means = press[1:-1]
     euploid_means = press[[0, -1], ]
-
-    Varying_Alpha(means, stds, arr_base)
 
     with open(Osmotic_Pressure_File) as fp:
         true_euploids_op, true_aneuploid_op = load(fp)
@@ -276,18 +280,59 @@ if __name__ == '__main__':
     Suptitle2 = "simulations medians ratio: 1:%.2f |" " true medians ratio: 1:%.2f" % (np.median(aneuploid_means)/np.median(euploid_means), np.median(true_aneuploid_op)/np.median(true_euploids_op))
     Suptitle = Suptitle1 + Suptitle2
 
-    Plot_Osmotic_Pressure()
-    plot_abundances(buckets)
-    Sweepdatafile = os.path.join(Datadir, "Complex_size.dmp")
-    Plot_Sweep_Data(Sweepdatafile, "complex size")
+    return euploid_means, aneuploid_means, Suptitle
 
-    #abundance_correlation_swipe()
-    Sweepdatafile = os.path.join(Datadir, "Abundance_correlation.dmp")
-    Plot_Sweep_Data(Sweepdatafile, "abundance correlation")
 
-    #abundance_correlation_swipe()
-    Sweepdatafile = os.path.join(Datadir, "Water_abundance.dmp")
-    Plot_Sweep_Data(Sweepdatafile, "water abundance")
+if __name__ == '__main__':
 
-    Sweepdatafile = os.path.join(Datadir, "Ideality_correction.dmp")
-    Plot_Sweep_Data(Sweepdatafile, "ideality correction")
+    Datadir = "data"
+    Ploidyfile = os.path.join(Datadir, "ploidy_vs_size.dmp")
+    ploidy_vs_size, corrfactor = Ploidy_Data(Ploidyfile)
+    sorting_index = np.argsort(ploidy_vs_size[:, 0])
+    Osmotic_Pressure_File = os.path.join(Datadir, "osmotic_pressure.dmp")
+
+    Simdatafile = os.path.join(Datadir, "simulation_data.dmp")
+    Alignment = False
+
+    with open(Simdatafile) as fp: Sim_Data = load(fp)
+    means = Sim_Data["means"]
+    stds = Sim_Data["stds"]
+    arr_base = Sim_Data["arr_base"]
+    buckets = Sim_Data["buckets"]
+    ion_contributions = Sim_Data["ion_contributions"]
+
+    Plot_Diameter(arr_base, Alignment = Alignment)
+
+    #Plot Osmotic pressure
+    #No ions
+    Observed_Volume, Predicted_Volume = Cell_Volume_Ions(Sim_Data["complex_dist"], Ploidyfile = Ploidyfile)
+    press = Osmotic_Pressure(Observed_Volume, Predicted_Volume)
+    euploid_means, aneuploid_means, Suptitle = Ploidy_Osmotic_Pressure(press, Osmotic_Pressure_File)
+    Plot_Osmotic_Pressure(Case = "Ions", Alignment = Alignment)
+
+    Observed_Volume, Predicted_Volume = Cell_Volumes(arr_base, means, Ploidyfile = Ploidyfile)
+    press = Osmotic_Pressure(Observed_Volume, Predicted_Volume)
+    euploid_means, aneuploid_means, Suptitle = Ploidy_Osmotic_Pressure(press, Osmotic_Pressure_File)
+    Plot_Osmotic_Pressure(Alignment = False)
+
+    if 0:
+        Varying_Alpha(Simdatafile)
+        Varying_Alpha(Simdatafile, Ions = True)
+        plot_abundances(buckets)
+        Sweepdatafile = os.path.join(Datadir, "Complex_size.dmp")
+        Plot_Sweep_Data(Sweepdatafile, "complex size")
+        Plot_Sweep_Data(Sweepdatafile, "complex size", Ions = True, Alignment = Alignment)
+
+        #abundance_correlation_swipe()
+        Sweepdatafile = os.path.join(Datadir, "Abundance_correlation.dmp")
+        Plot_Sweep_Data(Sweepdatafile, "abundance correlation")
+        Plot_Sweep_Data(Sweepdatafile, "abundance correlation", Ions = True, Alignment = Alignment)
+
+        #abundance_correlation_swipe()
+        Sweepdatafile = os.path.join(Datadir, "Water_abundance.dmp")
+        Plot_Sweep_Data(Sweepdatafile, "water abundance")
+        Plot_Sweep_Data(Sweepdatafile, "water abundance", Ions = True, Alignment = Alignment)
+
+        Sweepdatafile = os.path.join(Datadir, "Ideality_correction.dmp")
+        Plot_Sweep_Data(Sweepdatafile, "ideality correction")
+        Plot_Sweep_Data(Sweepdatafile, "ideality correction", Ions = True, Alignment = Alignment)

@@ -9,7 +9,7 @@ import numpy as np
 from pickle import load, dump
 import random
 from combined_simulations import Get_Abundance_Data, core_sim_loop, average_simulation_data
-from protein_abundances import generate_complex_ids, last_complex_adjustment, align_complex_abundances, sorted_complex_abundances
+from protein_abundances import generate_complex_ids, last_complex_adjustment, align_complex_abundances, sorted_complex_abundances, complex_distribution, Ion_Contribution
 
 
 alpha_factor = 1.0
@@ -51,28 +51,42 @@ Sweep_Parameters = {
         }
     }
 
-def sweep_parameter(base, sweep_name):
+def sweep_parameter(base, sweep_name, Ion_Alignment = False):
     """
     Performs a sweep over complex sizes
     """
     sweep_key = Sweep_Parameters[sweep_name]["sweep_elem"]
     sweep_values = Sweep_Parameters[sweep_name][sweep_key]
     Data = { key : [] for key in sweep_values }
+    Data_Ions = { key : [] for key in sweep_values }
     arr_base = np.array(base) + 1
     Sweepfile = os.path.join("data", "%s.dmp" % sweep_name.capitalize().replace(" ","_"))
 
     for key in sweep_values:
 
-        Sweep_Parameters[sweep_name][sweep_key] = key
-        complex_contents = generate_complex_ids([Sweep_Parameters[sweep_name]["total_partners"]], len(abundance_range))
+        Sweep_Parameters[sweep_name][sweep_key] = [key] if sweep_name == "complex size" else key
+        complex_contents = generate_complex_ids(Sweep_Parameters[sweep_name]["total_partners"], len(abundance_range))
         complex_contents = last_complex_adjustment(complex_contents, len(abundance_range))
+        unaligned_abundances = np.copy(abundance_range)
         aligned_abundances = align_complex_abundances(complex_contents, abundance_range, abundance_correlation = Sweep_Parameters[sweep_name]["abundance_correlation"])
         aligned_abundances = sorted_complex_abundances(aligned_abundances, complex_contents[-1], abundance_range, abundance_correlation = Sweep_Parameters[sweep_name]["abundance_correlation"])
         re_runs, buckets = core_sim_loop(base, complex_contents, aligned_abundances)
         means, stds, pre_buckets = average_simulation_data(re_runs, buckets, alpha = Sweep_Parameters[sweep_name]["alpha"], ideality_correction = Sweep_Parameters[sweep_name]["ideality_correction"])
-        Data[key] = (means, stds, pre_buckets)
+        ion_contributions = []
+        if not Ion_Alignment:
+            complex_dist = complex_distribution(complex_contents, unaligned_abundances)
+        else:
+            complex_dist = complex_distribution(complex_contents, aligned_abundances)
+        for aneuploidy_factor in base:
+            ion_contributions.append(Ion_Contribution(complex_dist, aneuploidy_factor))
 
-    with open(Sweepfile, "w") as fp: dump({"Sweep_Data" : Data, "arr_base" : arr_base}, fp)
+        ion_contributions = np.array(ion_contributions)
+        Norm_Factor = (Sweep_Parameters[sweep_name]["alpha"]*Sweep_Parameters[sweep_name]["ideality_correction"])/ion_contributions[0]
+        ion_contributions = ion_contributions * Norm_Factor
+        Data[key] = (means, stds, pre_buckets)
+        Data_Ions[key] = ion_contributions
+
+    with open(Sweepfile, "w") as fp: dump({"Sweep_Data" : Data, "arr_base" : arr_base, "Ion_Data" : Data_Ions, "complex_dist" : complex_dist}, fp)
 
 if __name__ == '__main__':
     
@@ -83,10 +97,14 @@ if __name__ == '__main__':
     abundance_range, total_partners = Get_Abundance_Data(Datastatfile, Interaction = Interaction)
     base = np.linspace(0.0, 1.0, 20).tolist()
     arr_base = np.array(base) + 1
-    sweep_parameter(base, "complex size")
-    sweep_parameter(base, "abundance correlation")
-    sweep_parameter(base, "water abundance")
-    sweep_parameter(base, "ideality correction")
+    for key, value in Sweep_Parameters.items():
+        if key != "complex size":
+            Sweep_Parameters[key]["total_partners"] = total_partners
+    #print Sweep_Parameters
+    sweep_parameter(base, "complex size", Ion_Alignment = True)
+    sweep_parameter(base, "abundance correlation", Ion_Alignment = True)
+    sweep_parameter(base, "water abundance", Ion_Alignment = True)
+    sweep_parameter(base, "ideality correction", Ion_Alignment = True)
 
     #total_partners = [20]
     #abundance_correlation_list = np.linspace(0.5, 0.9, 5).tolist()

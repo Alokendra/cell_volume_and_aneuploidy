@@ -7,6 +7,7 @@ from pickle import load, dump
 import random
 from scipy.interpolate import interp1d
 from protein_abundance_preprocess import Ploidy_Data
+from protein_abundances import Ion_Contribution
 
 Parameters = {
     "Vm" : 18.03e-3,
@@ -30,6 +31,21 @@ def Cell_Volumes(arr_base, means, Ploidyfile = "ploidy_vs_size.dmp"):
     Predicted_Volume = (interp_prediction(ploidy_vs_size[sorting_index, 0]))**3
 
     return Observed_Volume, Predicted_Volume
+
+def Cell_Volume_Ions(complex_dist, Ploidyfile = "ploidy_vs_size.dmp"):
+    """
+    This function calculates the cell volume using the relation
+    derived from consideration of ion and protein transport.
+    """
+    ploidy_vs_size, corrfactor = Ploidy_Data(Ploidyfile)
+    sorting_index = np.argsort(ploidy_vs_size[:, 0])
+    Observed_Volume = (ploidy_vs_size[sorting_index, 1]*corrfactor)**3
+    Predicted_Volume = []
+    for elem in ploidy_vs_size[sorting_index, 0]:
+        Predicted_Volume.append(Ion_Contribution(complex_dist, elem))
+
+    return Observed_Volume, Predicted_Volume
+    
 
 def Osmotic_Pressure(Observed_Volume, Predicted_Volume):
     """
