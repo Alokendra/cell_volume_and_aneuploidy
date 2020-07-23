@@ -16,15 +16,19 @@ jupyter:
 <!-- #region slideshow={"slide_type": "-"} -->
 # Cell Volume, Aneuploidy and Osmotic Stress
 
-This document is created to explore some of the results from Tsai et. al. biophysical model which that derives a relationship between cell volume and ploidy by showing how changes in the *protein abundances* and *composition* in aneuploid cells creates a hypo osmotic stress which causes a change in cell volume. Here we show the main equations of the model and its application to show how cell volume changes as a function of ploidy under different combinations of biophysical parameters of the cell. For the ease of exploration sliders are created for some of the key parameters of the model that can be changed interactively.
+This document is created to explore some of the results from Tsai et. al. biophysical model which that derives a relationship between cell volume and ploidy by showing how changes in the *protein abundances* and *composition* in aneuploid cells creates a hypo osmotic stress which causes a change in cell volume. Here we show the main equations of the model and its application to show how cell volume changes as a function of ploidy under different combinations of biophysical parameters of the cell.
 <!-- #endregion -->
 
 <!-- #region slideshow={"slide_type": "-"} -->
 ## Biophysical model (no ions)
 
-Considering transport of water and by balancing the chemical potential of water inside and outside the cell one gets
+In the following only water transport across the membrane is considered. Since cells typically contain higher concentration of solutes inside than outside water flows from outside the cell generating an osmotic pressure. In ideal solutions the chemical potential of a component $i$ whose concentration is $x_i$ is given by $\mu_i = \mu_i^{\circ}(T,P) + RT\ln{(x_i)}$ where $\mu_i^{\circ}$ is the chemical potential at some reference conditions.
+
+For water inside and outside the cell the chemical potential inside the cell is balanced by the chemical potential outside and work done by the excess hydrostatic pressure. There is also a chemical potential drop across the membrane which is represented here as $\Delta\mu_{H_2O}^{memb}$.
 
 $$\mu_{H_2O}^{in} - RT \ln c_{H_2O}^{in} - \int_P^{P + \Pi}V_mdp = \mu_{H_2O}^{out} + \Delta\mu_{H_2O}^{memb} - RT \ln c_{H_2O}^{out}$$
+
+We denote $\Delta\mu_{H_2O}^{memb} = RT\ln{(c_{H_2O}^{memb})}$ where $c_{H_2O}^{memb}$ is a constant.
 <!-- #endregion -->
 
 <!-- #region slideshow={"slide_type": "-"} -->
@@ -32,36 +36,45 @@ At equilibrium, by equating the chemical potential of water inside and outside o
 
 $$\Pi = -\frac{RT}{V_m}\ln{\left(\frac{c_{H_2O}^{in}}{c_{H_2O}^{out}c_{H_2O}^{memb}}\right)} = -\frac{RT}{V_m}\ln{\alpha}$$
 
-In the above equation, $\alpha$ is the water abundance factor.
-Considering that water is the dominant component of the cell the effective volume of the cell is then proportional to number of proteins in the cell times the water abundance factor $\alpha$
+Considering the fact that excess turgor pressure can rupture the cell wall, there must be an upper bound for the osmotic pressure, and consequently a lower bound for intracellular water concentration $c_{H_2O}^{in}$. This is denoted by $$\Pi_{max} = -\frac{RT}{V_m}\ln{\left(\frac{c_{H_2O,min}^{in}}{c_{H_2O}^{out}c_{H_2O}^{memb}}\right)}$$.
 
-$$V_{eff} = V - V_m \propto N_p\alpha$$
+We define the ratio inside the logarithm as a constant $\alpha$ so that $\alpha = \frac{c_{H_2O}^{in}}{c_{H_2O}^{out}c_{H_2O}^{memb}}$. $\alpha$ is the water abundance factor. From the above the bounds on $\alpha$ can be set as $\frac{c_{H_2O,min}^{in}}{c_{H_2O}^{out}c_{H_2O}^{memb}} < \alpha < 1$. In the simulations $\alpha$ is in the range $0.15 \leq \alpha \leq 1$. As water enters the cell from outside it increases $\alpha$ and relieves the osmotic stress. 
+
+Considering that water is the dominant component of the cell the effective volume of the cell is then proportional to number of proteins in the cell times the water abundance factor $\alpha$ where $V_u$ is the unavailable volume in the cell from excluded volume of the macromolecules and volume of nucleus.
+
+$$V_{eff} = V - V_u \propto N_p\alpha$$
 <!-- #endregion -->
 
 <!-- #region slideshow={"slide_type": "-"} -->
 If there are $N_k$ proteins of type k (where $k = 1,2,\ldots,N$) in the cell and $N_c$ complexes of type c (where $c = 1,2,\ldots,M$ then the total number of free proteins is given by [Tsai 2019][tsai2019hypo]
 
 $$N_p = \sum_{k=1}^{N}N_k - \sum_{c=1}^{M}\min_{k \in S_c}(N_k)N_c$$
+
+[tsai2019hypo]: #References
 <!-- #endregion -->
 
 <!-- #region slideshow={"slide_type": "-"} -->
 Here, the second term considers that the number of complexes of type $c$ is equal to the number of its least abundant component.
 This holds if every protein participates in a single complex and every complex assembles fully which are assumed here.
 Now if we have aneuploid cells then for particular proteins their amount may double due to duplication of gene coding.
-If $A_k$ is the abundance of protein $k$ and $P_k$ is the probability of gene duplication then the number of proteins can be written as $N_k = A_kP_k$. Then the above equatio becomes
+If $A_k$ is the abundance of protein $k$ and $P_k$ is the probability of gene duplication (ploidy) then the number of proteins can be written as $N_k = A_kP_k$. Then the above equation becomes
 
 $$V_{eff} = V - V_m = \alpha \left(\sum_{k=1}^{N}A_kP_k - \sum_{c=1}^M\min_{k \in S_c}(A_kP_k)N_c\right)$$
 <!-- #endregion -->
 
 <!-- #region slideshow={"slide_type": "-"} -->
-To obtain the effective volume one needs estimates of relative abundances of proteins and average sizes of protein complexes. In [Tsai 2019][tsai2019hypo] the relative abundances were obtained from PAX-DB project dataset and average protein complex size was estimated using two methods
+To obtain the effective volume one needs estimates of *relative abundances* of proteins and *average sizes* of protein complexes. In [Tsai 2019][tsai2019hypo] the relative abundances were obtained from PAX-DB project dataset and average protein complex size was estimated using two methods
 
 - Average number of protein-protein interactions.
 - Measurements of number of complex size distributions.
 
-A correction factor was also introduced for protein abundance to account for the correlation of abundances in proteins that form complex. If the correlation factor is $c_{complex}$ then the adjusted abundance is
+To limit the impact of highly interacting hubs the distribution of protein complexes was limited to 3-45 complex components.
+
+A correction factor was also introduced for protein abundance to account for the correlation of abundances in proteins that form complexes. If the correlation factor is $c_{complex}$ then the adjusted abundance is
 
 $$A'_i = A_i(1 - c_{complex}) + c_{complex}\sum_{j\in{complex}}A_j$$
+
+From the above formula it can be seen that the correlation factor adjusts the abundance of each protein towards their mean abundances.
 
 
 [tsai2019hypo]: #References
@@ -441,7 +454,7 @@ Then the osmotic pressure difference is given by
 
 $$\delta\Pi = \sum_j RT\delta C_j + RT \frac{\sum_p(N_p + N'_p)}{V_{cell}}$$
 
-Here $\delta C_i = C_i^{in} - C_i{out}$
+Here $\delta C_i = C_i^{in} - C_i^{out}$
 
 We can write this as
 
@@ -452,7 +465,7 @@ At equilibrium, we have $\delta P = \delta\Pi$ so we can apply the Laplace's equ
 
 $$\frac{2\sigma}{R_{cell}} = \sum_j RTC_i^{out}\left(\frac{C_i^{in}}{C_i^{out}} - 1\right) + RT \frac{\sum_p(N_p + N'_p)}{V_{cell}}$$
 
-Putting the value of $\frac{C_i^{in}}{C_i^{out}$ and neglecting the contribution from Laplace pressure
+Putting the value of $\frac{C_i^{in}}{C_i^{out}}$ and neglecting the contribution from Laplace pressure
 
 $$0 = \sum_j RTC_i^{out}\left(\exp\left({\frac{J_i}{\lambda_i}}\right) - 1\right) + RT \frac{\sum_p(N_p + N'_p)}{V_{cell}}$$
 
